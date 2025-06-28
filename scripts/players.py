@@ -3,7 +3,7 @@ import pygame
 class Player1:
     def __init__(self, sprite_data, spritesheet):
         self.posicionX = 100
-        self.posicionY = 250
+        self.posicionY = 550
         self.velocidad = 6
         self.radio = 20
         self.rect = pygame.Rect(self.posicionX - 17, self.posicionY - 17, 35, 35)
@@ -18,7 +18,7 @@ class Player1:
     def crear(self, screen):
         self.draw(screen)
     
-    def mover(self, keys, screen, joystick=None):
+    def mover(self, keys, screen, vacios, joystick=None):
         eje_x, eje_y = 0, 0
 
         if joystick:
@@ -26,6 +26,7 @@ class Player1:
             eje_y = joystick.get_axis(1)
 
         movio = False
+        old_x, old_y = self.posicionX, self.posicionY
 
         if keys[pygame.K_w] or eje_y < -0.5:
             self.posicionY -= self.velocidad
@@ -47,6 +48,13 @@ class Player1:
         self.rect.left = self.posicionX - 17
         self.rect.top = self.posicionY - 17
 
+        for v in vacios:
+            if self.rect.colliderect(v):
+                self.posicionX = old_x
+                self.posicionY = old_y
+                self.rect.topleft = (self.posicionX - 17, self.posicionY - 17)
+                break
+
         if movio:
             self.animar()
         else:
@@ -65,16 +73,16 @@ class Player1:
         if self.frame_counter >= self.frame_delay:
             self.frame_index = (self.frame_index + 1) % len(self.sprite_data[self.direction])
             self.frame_counter = 0
-    
+
     def limit(self):
-        self.posicionX = max(0, min(self.posicionX, 800))
-        self.posicionY = max(0, min(self.posicionY, 500))
+        self.posicionX = max(50, min(self.posicionX, 1420))
+        self.posicionY = max(320, min(self.posicionY, 800))
 
 class Player2(Player1):
     def __init__(self, sprite_data, spritesheet):
         super().__init__(sprite_data, spritesheet)
         self.posicionX = 60
-        self.posicionY = 250
+        self.posicionY = 550
         self.radio = 20
         self.velocidad = 3
         self.boost_speed = 5
@@ -85,7 +93,7 @@ class Player2(Player1):
     def crear(self, screen):
         self.draw(screen)
 
-    def mover(self, keys, boost_activo, screen, joystick=None):
+    def mover(self, keys, boost_activo, screen, vacios, joystick=None):
 
         if joystick:
             eje_x = joystick.get_axis(0)
@@ -96,6 +104,7 @@ class Player2(Player1):
 
         velocidad_actual = self.boost_speed if boost_activo else self.velocidad
         movio = False
+        old_x, old_y = self.posicionX, self.posicionY
 
         if keys[pygame.K_UP] or eje_y < -0.5:
             self.posicionY -= velocidad_actual
@@ -113,14 +122,22 @@ class Player2(Player1):
             self.posicionX += velocidad_actual
             self.direction = "derecha"
             movio = True
+        
+        self.rect.left = self.posicionX - 17
+        self.rect.top = self.posicionY - 17
+
+        for v in vacios:
+            if self.rect.colliderect(v):
+                self.posicionX = old_x
+                self.posicionY = old_y
+                self.rect.topleft = (self.posicionX - 17, self.posicionY - 17)
+                break
 
         if movio:
             self.animar()
         else:
             self.frame_index = 1
 
-        self.rect.left = self.posicionX - 17
-        self.rect.top = self.posicionY - 17
         self.draw(screen)
         self.limit()
 
