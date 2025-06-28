@@ -1,7 +1,7 @@
 import pygame, sys, json, random
 from scripts.sprite import Spritesheet
 from scripts.players import Player1, Player2
-from scripts.enemigos import Enemigo, astar
+from scripts.enemigos import Enemigo, astar, crear_estados_enemigo, encontrar_direccion_opuesta
 
 pygame.init()
 pygame.joystick.init()
@@ -10,6 +10,7 @@ altura = 900
 ancho = 1500
 screen = pygame.display.set_mode((ancho, altura))
 pygame.display.set_caption("Protect The Farmer")
+pygame.display.set_icon(pygame.image.load("assets/images/icono.png"))
 clock = pygame.time.Clock()
 fondo = pygame.image.load('assets/images/background.png')
 fondo = pygame.transform.scale(fondo, (ancho, altura))
@@ -57,7 +58,7 @@ def construir_grid(vacios, p1r):
         for i in range(w):
             for j in range(h):
                 if 0 <= y1 + j < filas and 0 <= x1 + i < columnas:
-                    grid[y1 + j][x1 + i] = 1
+                    grid[y1 + j][x1 + i] = 3
 
     px = p1r.centerx // 30
     py = p1r.centery // 30
@@ -105,28 +106,51 @@ while run:
         x, y = generar_posicion_valida(vacios, ancho, altura, p1, p2)
         if x is not None and y is not None:
             nuevo_enemigo = Enemigo(x, y, sprite_data, spritesheet)
+            crear_estados_enemigo(nuevo_enemigo, p1, p2)
             enemigos.append(nuevo_enemigo)
             tiempo_spawn = ahora
 
     grid = construir_grid(vacios, p1.rect)
     for enemigo in enemigos[:]:
         ahora = pygame.time.get_ticks()
+        if hasattr(enemigo, "actualizar_estado"):
+            enemigo.actualizar_estado(p1, p2)
+
         pos_actual = (enemigo.rect.centerx // 30, enemigo.rect.centery // 30)
-        pos_objetivo = (p2.rect.centerx // 30, p2.rect.centery // 30)
+        pos_jugador2 = (p2.rect.centerx // 30, p2.rect.centery // 30)
+        pos_jugador1 = (p1.rect.centerx // 30, p1.rect.centery // 30)
 
         if not (0 <= pos_actual[0] < 50 and 0 <= pos_actual[1] < 30):
             continue
-        if not (0 <= pos_objetivo[0] < 50 and 0 <= pos_objetivo[1] < 30):
+
+        if enemigo.estado_actual == "perseguir":
+            objetivo = pos_jugador2
+        elif enemigo.estado_actual == "evadir":
+            objetivo = encontrar_direccion_opuesta(p1.rect, enemigo.rect, grid)
+            if objetivo is None:
+                objetivo = pos_jugador2
+        elif enemigo.estado_actual == "quieto":
+            enemigo.path = []
+            enemigo.dibujar(screen)
             continue
 
-        if grid[pos_actual[1]][pos_actual[0]] == 1 or grid[pos_objetivo[1]][pos_objetivo[0]] == 1:
-            continue
-
-        if ahora - enemigo.ultimo_recalculo > enemigo.recalculo_cada or enemigo.ultimo_objetivo != pos_objetivo:
-            enemigo.path = astar(pos_actual, pos_objetivo, grid) or []
+        if objetivo and 0 <= objetivo[0] < 50 and 0 <= objetivo[1] < 30:
+            if (
+                ahora - enemigo.ultimo_recalculo > enemigo.recalculo_cada
+                or enemigo.ultimo_objetivo != objetivo
+            ):
+                nuevo_camino = astar(pos_actual, objetivo, grid)
+                if nuevo_camino:
+                    enemigo.path = nuevo_camino
+                    enemigo.path_index = 1
+                    enemigo.ultimo_objetivo = objetivo
+                    enemigo.ultimo_recalculo = ahora
+                else:
+                    enemigo.path = []
+                    enemigo.path_index = 1
+        else:
+            enemigo.path = []
             enemigo.path_index = 1
-            enemigo.ultimo_objetivo = pos_objetivo
-            enemigo.ultimo_recalculo = ahora
 
         enemigo.seguir_ruta()
         enemigo.dibujar(screen)
