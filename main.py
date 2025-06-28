@@ -7,9 +7,10 @@ pygame.joystick.init()
 altura = 900
 ancho = 1500
 screen = pygame.display.set_mode((ancho, altura))
-surface = pygame.Surface((ancho, altura), pygame.SRCALPHA)
-pygame.display.set_caption("Vamos por todo")
+pygame.display.set_caption("Protect The Farmer")
 clock = pygame.time.Clock()
+fondo = pygame.image.load("assets\images\fondo.png")
+fondo = pygame.transform.scale(fondo, (ancho, altura))
 
 transparente = (0,0,0, 100)
 
@@ -39,7 +40,7 @@ while run:
 
     
     screen.fill((0,0,0))
-    screen.blit(surface, (0,0))
+    screen.blit(fondo, (0,0))
     clock.tick(60)
 
 
