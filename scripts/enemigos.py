@@ -92,12 +92,17 @@ def astar(start, end, grid):
             return path[::-1]
 
         closed_set.add((current.x, current.y))
+
         for dx, dy in [(0,1),(0,-1),(1,0),(-1,0)]:
             nx, ny = current.x + dx, current.y + dy
-            if 0 <= nx < len(grid[0]) and 0 <= ny < len(grid) and not grid[ny][nx]:
+            if 0 <= nx < len(grid[0]) and 0 <= ny < len(grid):
                 if (nx, ny) in closed_set:
                     continue
-                g = current.g + 1
+                if grid[ny][nx] == 1:
+                    continue
+                
+                extra_cost = 5 if grid[ny][nx] == 2 else 1
+                g = current.g + extra_cost
                 h = heuristic((nx, ny), end)
                 heapq.heappush(open_list, Node(nx, ny, parent=current, g=g, h=h))
     return None

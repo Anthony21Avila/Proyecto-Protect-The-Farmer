@@ -26,8 +26,26 @@ for joystick in joysticks:
     joystick.init()
     print(f"Joystick {joystick.get_id()} conectado: {joystick.get_name()}")
 
+def generar_posicion_valida(vacios, ancho, alto, jugador1, jugador2, distancia_segura=150, ancho_rect=35, alto_rect=35):
+    for _ in range(100):
+        x = random.randint(50, ancho - 50)
+        y = random.randint(320, alto - 50)
+        rect = pygame.Rect(x - ancho_rect // 2, y - alto_rect // 2, ancho_rect, alto_rect)
 
-def construir_grid(vacios, p1r, p2r):
+        if any(rect.colliderect(v) for v in vacios):
+            continue
+
+        if rect.centerx and rect.centery:
+            distancia_p1 = ((jugador1.rect.centerx - x)**2 + (jugador1.rect.centery - y)**2)**0.5
+            distancia_p2 = ((jugador2.rect.centerx - x)**2 + (jugador2.rect.centery - y)**2)**0.5
+
+            if distancia_p1 < distancia_segura or distancia_p2 < distancia_segura:
+                continue
+
+        return x, y
+    return None, None
+
+def construir_grid(vacios, p1r):
     filas, columnas = 30, 50
     grid = [[0 for _ in range(columnas)] for _ in range(filas)]
 
@@ -38,15 +56,17 @@ def construir_grid(vacios, p1r, p2r):
         h = v.height // 30
         for i in range(w):
             for j in range(h):
-                grid[y1 + j][x1 + i] = 1
+                if 0 <= y1 + j < filas and 0 <= x1 + i < columnas:
+                    grid[y1 + j][x1 + i] = 1
 
     px = p1r.centerx // 30
     py = p1r.centery // 30
-    tx = p2r.centerx // 30
-    ty = p2r.centery // 30
-
-    if (px, py) != (tx, ty) and 0 <= px < columnas and 0 <= py < filas:
-        grid[py][px] = 1
+    for dy in range(-2, 3):
+        for dx in range(-2, 3):
+            nx, ny = px + dx, py + dy
+            if 0 <= nx < columnas and 0 <= ny < filas:
+                if grid[ny][nx] == 0:
+                    grid[ny][nx] = 2
 
     return grid
 
@@ -82,11 +102,13 @@ while run:
 
     ahora = pygame.time.get_ticks()
     if ahora - tiempo_spawn > tiempo_entre_enemigos and len(enemigos) < MAX_ENEMIGOS:
-        nuevo_enemigo = Enemigo(random.randint(50, 1420), random.randint(320, 800), sprite_data, spritesheet) 
-        enemigos.append(nuevo_enemigo)
-        tiempo_spawn = ahora
+        x, y = generar_posicion_valida(vacios, ancho, altura, p1, p2)
+        if x is not None and y is not None:
+            nuevo_enemigo = Enemigo(x, y, sprite_data, spritesheet)
+            enemigos.append(nuevo_enemigo)
+            tiempo_spawn = ahora
 
-    grid = construir_grid(vacios, p1.rect, p2.rect)
+    grid = construir_grid(vacios, p1.rect)
     for enemigo in enemigos[:]:
         ahora = pygame.time.get_ticks()
         pos_actual = (enemigo.rect.centerx // 30, enemigo.rect.centery // 30)
