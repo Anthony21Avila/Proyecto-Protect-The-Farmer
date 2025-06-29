@@ -81,10 +81,13 @@ class Player1:
 class Player2(Player1):
     def __init__(self, sprite_data, spritesheet):
         super().__init__(sprite_data, spritesheet)
+        self.vidas = 3
         self.posicionX = 60
         self.posicionY = 550
         self.radio = 20
         self.velocidad = 3
+        self.ultimo_atk = 0
+        self.cooldown_atk = 5000
         self.boost_speed = 5
         self.rect = pygame.Rect(self.posicionX - 17, self.posicionY - 17, 35, 35)
         self.sprite_data = sprite_data["jugador2"]
@@ -143,3 +146,11 @@ class Player2(Player1):
 
     def boost(self, objeto):
         return self.rect.colliderect(objeto)
+    
+    def puede_recibir_atk(self):
+        return pygame.time.get_ticks() - self.ultimo_atk > self.cooldown_atk
+
+    def recibir_atk(self):
+        if self.puede_recibir_atk() and self.vidas > 0:
+            self.vidas -= 1
+            self.ultimo_danio = pygame.time.get_ticks()

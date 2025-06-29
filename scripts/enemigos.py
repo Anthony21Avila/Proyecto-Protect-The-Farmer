@@ -1,11 +1,16 @@
 import pygame
 import heapq
 
+x_min = 50 // 30
+x_max = 1420 // 30
+y_min = 320 // 30
+y_max = 800 // 30
+
 class Enemigo:
-    def __init__(self, x, y, sprite_data, spritesheet):
+    def __init__(self, x, y, sprite_data, spritesheet, vel_i):
         self.posicionX = x
         self.posicionY = y
-        self.velocidad = 2
+        self.velocidad = vel_i
         self.rect = pygame.Rect(self.posicionX - 17, self.posicionY - 17, 35, 35)
 
         self.sprite_data = sprite_data["enemigos"]
@@ -29,6 +34,10 @@ class Enemigo:
             return
         
         sig_x, sig_y = self.path[self.path_index]
+
+        if not (x_min <= sig_x <= x_max and y_min <= sig_y <= y_max):
+            return
+        
         destino_x = sig_x * 30 + 15
         destino_y = sig_y * 30 + 15
 
@@ -101,6 +110,7 @@ def heuristic(a, b):
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
 def astar(start, end, grid, max_iter=1000):
+
     open_list = []
     heapq.heappush(open_list, Node(*start, g=0, h=heuristic(start, end)))
     closed_set = set()
@@ -121,7 +131,11 @@ def astar(start, end, grid, max_iter=1000):
 
         for dx, dy in [(0,1),(0,-1),(1,0),(-1,0)]:
             nx, ny = current.x + dx, current.y + dy
+
             if 0 <= nx < len(grid[0]) and 0 <= ny < len(grid):
+                if not (x_min <= nx <= x_max and y_min <= ny <= y_max):
+                    continue
+
                 if (nx, ny) in closed_set or grid[ny][nx] == 1 or grid[ny][nx] == 3:
                     continue
 
