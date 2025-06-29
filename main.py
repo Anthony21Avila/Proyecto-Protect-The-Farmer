@@ -30,7 +30,7 @@ for joystick in joysticks:
 def generar_posicion_valida(vacios, ancho, alto, jugador1, jugador2, distancia_segura=150, ancho_rect=35, alto_rect=35):
     for _ in range(100):
         x = random.randint(50, ancho - 50)
-        y = random.randint(320, alto - 50)
+        y = random.randint(320, alto - 80)
         rect = pygame.Rect(x - ancho_rect // 2, y - alto_rect // 2, ancho_rect, alto_rect)
 
         if any(rect.colliderect(v) for v in vacios):
@@ -125,6 +125,7 @@ while run:
         x, y = generar_posicion_valida(vacios, ancho, altura, p1, p2)
         if x is not None and y is not None:
             nuevo_enemigo = Enemigo(x, y, sprite_data, spritesheet, vel_ene)
+            nuevo_enemigo.grid = grid
             crear_estados_enemigo(nuevo_enemigo, p1, p2)
             enemigos.append(nuevo_enemigo)
             tiempo_spawn = ahora

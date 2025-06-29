@@ -22,6 +22,7 @@ class Enemigo:
 
         self.estados = {}
         self.estado_actual = "quieto"
+        self.grid = None
 
         self.path = []
         self.path_index = 1
@@ -32,12 +33,17 @@ class Enemigo:
     def seguir_ruta(self):
         if not self.path or self.path_index >= len(self.path):
             return
-        
+
         sig_x, sig_y = self.path[self.path_index]
 
+        if self.grid:
+            if 0 <= sig_y < len(self.grid) and 0 <= sig_x < len(self.grid[0]):
+                if self.grid[sig_y][sig_x] == 3:
+                    return
+                
         if not (x_min <= sig_x <= x_max and y_min <= sig_y <= y_max):
             return
-        
+
         destino_x = sig_x * 30 + 15
         destino_y = sig_y * 30 + 15
 
@@ -59,6 +65,7 @@ class Enemigo:
             self.path_index += 1
 
         self.rect.topleft = (self.posicionX - 17, self.posicionY - 17)
+
 
 
     def animar(self):
