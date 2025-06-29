@@ -1,4 +1,9 @@
-{
+{ "Estudiante": {
+    "Datos": [
+      { "Nombre": "Anthony Avila Betancour" },
+      { "Matricula": "23-SISN-2-002" }
+    ]
+  },
   "jugador1": {
     "abajo": [
       { "x": 0, "y": 0, "w": 48.4, "h": 49.5 },

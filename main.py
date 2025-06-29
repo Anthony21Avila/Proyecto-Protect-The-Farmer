@@ -1,8 +1,13 @@
+#Nombre: Anthon Avila
+#Matricula: 23-SISN-2-002
+
+#Importa librerias y de otros scrips
 import pygame, sys, json, random
 from scripts.sprite import Spritesheet
 from scripts.players import Player1, Player2
 from scripts.enemigos import Enemigo, astar, crear_estados_enemigo, encontrar_direccion_opuesta
 
+#Inicializamos variables que vamos a utilizar, ademas de cargar ciertos elementos como sprites, iconos, fondo y de mas
 pygame.init()
 pygame.joystick.init()
 
@@ -27,6 +32,7 @@ for joystick in joysticks:
     joystick.init()
     print(f"Joystick {joystick.get_id()} conectado: {joystick.get_name()}")
 
+#Genera una posición aleatoria válida para enemigos o fresas
 def generar_posicion_valida(vacios, ancho, alto, jugador1, jugador2, distancia_segura=150, ancho_rect=35, alto_rect=35):
     for _ in range(100):
         x = random.randint(50, ancho - 50)
@@ -46,6 +52,7 @@ def generar_posicion_valida(vacios, ancho, alto, jugador1, jugador2, distancia_s
         return x, y
     return None, None
 
+# Construye una grilla lógica o matriz 30x50 para representar el mapa del juego
 def construir_grid(vacios, p1r):
     filas, columnas = 30, 50
     grid = [[0 for _ in range(columnas)] for _ in range(filas)]
@@ -71,12 +78,14 @@ def construir_grid(vacios, p1r):
 
     return grid
 
+#Muentra las vidas y las ubica en la parte superior de la pantalla
 def dibujar_vidas(screen, jugador):
     for i in range(jugador.vidas):
         x = 650 + i * (corazon_imagen.get_width() + 10)
         y = 20
         screen.blit(corazon_imagen, (x, y))
 
+#Dibuja un icono y los puntos que a conseguido el jugador hasta el momento
 def dibujar_puntos(screen, puntos, fresa_sprite):
     font = pygame.font.SysFont(None, 36)
     texto = font.render(str(puntos), True, (255, 255, 255))
@@ -84,7 +93,8 @@ def dibujar_puntos(screen, puntos, fresa_sprite):
     ancho = screen.get_width()
     screen.blit(fresa_sprite, (ancho - 80, 20))
     screen.blit(texto, (ancho - 40, 25))
-    
+
+#Inicializamos a ambos jugadores y les pasamos sus sprites y el spritesheet
 p1 = Player1(sprite_data, spritesheet)
 p2 = Player2(sprite_data, spritesheet)
 
@@ -93,6 +103,8 @@ run = True
 p1.crear(screen)
 p2.crear(screen)
 
+#iniciamos vacios que restringiran a los jugadores y enemigos, ademas de colocar otras varaibles que usaremos 
+# como para registrar una lista de enemigo, los puntos que aparecen en el mapa y algunos limite o conficiones
 vacios = [pygame.Rect(200, 320, 200, 200), pygame.Rect(1100, 320, 200, 200), pygame.Rect(650, 470, 200, 200), pygame.Rect(200, 650, 200, 200), pygame.Rect(1100, 650, 200, 200)]
 
 enemigos = []
@@ -106,30 +118,40 @@ puntos, umbral_puntos, umbral_anterior = 0, 0, 0
 fresa_sprite = fresa_sprite = pygame.transform.scale(pygame.image.load("assets/images/fresa.png").convert_alpha(), (30, 30))
 vel_ene = 2
 
+#El While donde se ejecutara el juego
 while run:
+    #Capturamos todos los eventos que ocurran en pygame
     for event in pygame.event.get():
 
+        #Indicamos si el jugador presiona la X para salir del programa vuelva nuestro run en False y finalice el while
         if event.type == pygame.QUIT:
             run = False
 
-    
+    #Pintamos el fondo de negro, pasamos la imagen de fondo y asignamos los fps a 60
     screen.fill((0,0,0))
     screen.blit(fondo, (0,0))
     clock.tick(60)
 
+    #Presentamos los vacios en pantalla
     for v in vacios:
         pygame.draw.rect(screen, (20, 20, 20), v)
 
+    #Asignamos un tiempo para comprar en los siguientes if
     ahora = pygame.time.get_ticks()
     if ahora - tiempo_spawn > tiempo_entre_enemigos and len(enemigos) < MAX_ENEMIGOS:
+
+        #Validamos que sea posible generar en estas areas un enemigo y lo añadimos a nuestra lista de enemigos
+        #Ademas de hacer una comparacion de tiempo para que no genere enemigos sin parar
         x, y = generar_posicion_valida(vacios, ancho, altura, p1, p2)
         if x is not None and y is not None:
             nuevo_enemigo = Enemigo(x, y, sprite_data, spritesheet, vel_ene)
             nuevo_enemigo.grid = grid
+            nuevo_enemigo.vacios = vacios
             crear_estados_enemigo(nuevo_enemigo, p1, p2)
             enemigos.append(nuevo_enemigo)
             tiempo_spawn = ahora
 
+    #Pedimos una matriz para permitir realizar una ruta para los enemigos y posteriormente comprobar sus estados
     grid = construir_grid(vacios, p1.rect)
     for enemigo in enemigos[:]:
         if hasattr(enemigo, "actualizar_estado"):
@@ -141,7 +163,8 @@ while run:
 
         if not (0 <= pos_actual[0] < 50 and 0 <= pos_actual[1] < 30):
             continue
-
+        
+        #Buscamos los estados de los enemigos para asignar el que le corresponda segun la situacion
         if enemigo.estado_actual == "perseguir":
             objetivo = pos_jugador2
         elif enemigo.estado_actual == "evadir":
@@ -152,12 +175,15 @@ while run:
             enemigo.path = []
             enemigo.dibujar(screen)
             continue
-
+        
+        #Comprobamos si hay un enemigo en el limite dle grip y se calcula la ruta solo si paso suficiente 
+        #tiempo o si el objetivo cambio de lugar
         if objetivo and 0 <= objetivo[0] < 50 and 0 <= objetivo[1] < 30:
             if (
                 ahora - enemigo.ultimo_recalculo > enemigo.recalculo_cada
                 or enemigo.ultimo_objetivo != objetivo
             ):
+                #Se actualiza la ruta llamando al A*, pero en caso de no encontrar camino se pasara una ruta vacia
                 nuevo_camino = astar(pos_actual, objetivo, grid)
                 if nuevo_camino:
                     enemigo.path = nuevo_camino
@@ -168,14 +194,20 @@ while run:
                     enemigo.path = []
                     enemigo.path_index = 1
         else:
+            #Si el objetivo no es valido se limpia tambien la ruta
             enemigo.path = []
             enemigo.path_index = 1
 
+        #Se ejecuta la rut de los enemigos y se dibujan en pantalla
         enemigo.seguir_ruta()
         enemigo.dibujar(screen)
 
+        #Si el enemigo toca al Player1 (O al reves) se elimina el enemigo
         if enemigo.tocar_jugador(p1.rect):
             enemigos.remove(enemigo)
+        
+        #Si el enemigo toca al Player2 se elimina y llama una funcion para reducir la vida en 1 y
+        #Dar invulnerabilidad temporalmente a Player2, pero si las vidas pasan a 0 termina el while
         if enemigo.tocar_jugador(p2.rect):
             enemigos.remove(enemigo)
             if p2.vidas > 0:
@@ -183,6 +215,8 @@ while run:
             if p2.vidas == 0:
                 run = False
 
+    #Limita el tiempo para que aparesca una fresa y la cantidad maxima de estas (siendo 20 el maximo)
+    #Ademas de hacer que las mismas aparescan en un area posible con una cantidad de intentos maxima
     if ahora - ultimo_spawn_fresa > 6000 and len(fresas) < 20:
         intentos = 0
         while intentos < 100:
@@ -199,6 +233,8 @@ while run:
                     break
             intentos += 1
 
+    #Comprobamos si el Player2 toca las fresas para eliminarlas, ademas de aumenta los puntos y de paso
+    #Incrementar aumentar la velocidad base de los enemigos (jejeje...)
     for fresa in fresas[:]:
         if p2.rect.colliderect(fresa):
             fresas.remove(fresa)
@@ -211,23 +247,25 @@ while run:
             umbral_anterior = int(umbral_puntos)
             vel_ene += 0.5
 
-
+    #Dibujamos las fresas y los puntos
     for fresa in fresas:
         screen.blit(fresa_sprite, (fresa.x, fresa.y))
-
     dibujar_puntos(screen, puntos, fresa_sprite)
 
+    #Verificamos si el Player 1 y 2 se tocan para activar el boost de velocidad para el 2
     if p2.rect.colliderect(p1.rect):
         boost = True
     else:
         boost = False
     
+    #Verificamos si hay un joystick 2 para enviar la direccion a la que se mueva el mismno
+    #si es que se mueve, en todo caso se puede utilizar teclado
     if len(joysticks) >= 2:
         p2.mover(pygame.key.get_pressed(), boost, screen, vacios, joystick=joysticks[1])
     else:
         p2.mover(pygame.key.get_pressed(), boost, screen, vacios)
 
-
+    #Lo mismo de arriba pero para el jugador 1 y sin mandar un boost
     if len(joysticks) >= 1:
         p1.mover(pygame.key.get_pressed(), screen, vacios, joystick=joysticks[0])
     else:

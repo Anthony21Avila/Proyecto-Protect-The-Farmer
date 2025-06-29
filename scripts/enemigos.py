@@ -1,3 +1,5 @@
+#Nombre: Anthon Avila
+#Matricula: 23-SISN-2-002
 import pygame
 import heapq
 
@@ -23,6 +25,7 @@ class Enemigo:
         self.estados = {}
         self.estado_actual = "quieto"
         self.grid = None
+        self.vacios = []
 
         self.path = []
         self.path_index = 1
@@ -31,6 +34,8 @@ class Enemigo:
         self.ultimo_objetivo = (-1, -1)
 
     def seguir_ruta(self):
+        old_x, old_y = self.posicionX, self.posicionY
+
         if not self.path or self.path_index >= len(self.path):
             return
 
@@ -53,6 +58,23 @@ class Enemigo:
 
         self.posicionX += self.velocidad * dx / dist
         self.posicionY += self.velocidad * dy / dist
+        self.rect.topleft = (self.posicionX - 17, self.posicionY - 17)
+
+        for v in self.vacios:
+            if self.rect.colliderect(v):
+                self.posicionX = old_x
+                self.posicionY = old_y
+                self.rect.topleft = (self.posicionX - 17, self.posicionY - 17)
+
+                if self.grid:
+                    actual = (self.rect.centerx // 30, self.rect.centery // 30)
+                    objetivo = self.ultimo_objetivo
+                    nuevo_camino = astar(actual, objetivo, self.grid)
+                    if nuevo_camino:
+                        self.path = nuevo_camino
+                        self.path_index = 1
+                    else:
+                        self.path = []
 
         if abs(dx) > abs(dy):
             self.direction = "derecha" if dx > 0 else "izquierda"
@@ -65,7 +87,6 @@ class Enemigo:
             self.path_index += 1
 
         self.rect.topleft = (self.posicionX - 17, self.posicionY - 17)
-
 
 
     def animar(self):
