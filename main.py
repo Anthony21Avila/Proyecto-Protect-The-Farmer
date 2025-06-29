@@ -2,7 +2,7 @@
 #Matricula: 23-SISN-2-002
 
 #Importa librerias y de otros scrips
-import pygame, sys, json, random
+import pygame, sys, json, random, math
 from scripts.sprite import Spritesheet
 from scripts.players import Player1, Player2
 from scripts.enemigos import Enemigo, astar, crear_estados_enemigo, encontrar_direccion_opuesta
@@ -60,8 +60,8 @@ def construir_grid(vacios, p1r):
     for v in vacios:
         x1 = v.left // 30
         y1 = v.top // 30
-        w = v.width // 30
-        h = v.height // 30
+        w = math.ceil(v.width / 30)
+        h = math.ceil(v.height / 30)
         for i in range(w):
             for j in range(h):
                 if 0 <= y1 + j < filas and 0 <= x1 + i < columnas:
@@ -105,7 +105,7 @@ p2.crear(screen)
 
 #iniciamos vacios que restringiran a los jugadores y enemigos, ademas de colocar otras varaibles que usaremos 
 # como para registrar una lista de enemigo, los puntos que aparecen en el mapa y algunos limite o conficiones
-vacios = [pygame.Rect(200, 320, 200, 200), pygame.Rect(1100, 320, 200, 200), pygame.Rect(650, 470, 200, 200), pygame.Rect(200, 650, 200, 200), pygame.Rect(1100, 650, 200, 200)]
+vacios = [pygame.Rect(210, 300, 180, 180), pygame.Rect(1110, 300, 180, 180), pygame.Rect(660, 480, 180, 180), pygame.Rect(210, 660, 180, 180), pygame.Rect(1110, 660, 180, 180)]
 
 enemigos = []
 tiempo_spawn = pygame.time.get_ticks()
@@ -272,6 +272,7 @@ while run:
         p1.mover(pygame.key.get_pressed(), screen,  vacios)
 
     dibujar_vidas(screen, p2)
+
     pygame.display.flip()
 
 del p2, p1
