@@ -171,7 +171,12 @@ class Player2(Player1):
         return pygame.time.get_ticks() - self.ultimo_atk > self.cooldown_atk
 
     #Reduce la vida y llama el validador para saber si puede recibir un ataque o no
-    def recibir_atk(self):
+    def recibir_atk(self, inv, hit):
         if self.puede_recibir_atk() and self.vidas > 0:
             self.vidas -= 1
             self.ultimo_atk = pygame.time.get_ticks()
+
+            hit.play()
+
+            inv.play()
+            pygame.time.set_timer(pygame.USEREVENT + 1, 3000)

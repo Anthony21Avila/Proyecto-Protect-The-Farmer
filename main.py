@@ -34,6 +34,14 @@ for joystick in joysticks:
     joystick.init()
     print(f"Joystick {joystick.get_id()} conectado: {joystick.get_name()}")
 
+slash = pygame.mixer.Sound("assets/sounds/Slash.ogg")
+hit = pygame.mixer.Sound("assets/sounds/Hit.ogg")
+inv = pygame.mixer.Sound("assets/sounds/Inv.ogg")
+slash_frames = []
+for i in range(1, 8):
+    img = pygame.image.load(f"assets/images/slash/AxeSlashEffect ({i}).png").convert_alpha()
+    slash_frames.append(pygame.transform.scale(img, (60, 60)))
+
 
 
 #Menu principal
@@ -146,7 +154,7 @@ def Menu():
                 pygame.quit()
                 sys.exit()
 
-#Genera una posición aleatoria válida para enemigos o fresas
+#Genera una posición aleatoria valida para enemigos o fresas
 def generar_posicion_valida(vacios, ancho, alto, jugador1, jugador2, distancia_segura=150, ancho_rect=35, alto_rect=35):
     for _ in range(100):
         x = random.randint(50, ancho - 50)
@@ -166,7 +174,7 @@ def generar_posicion_valida(vacios, ancho, alto, jugador1, jugador2, distancia_s
         return x, y
     return None, None
 
-# Construye una grilla lógica o matriz 30x50 para representar el mapa del juego
+#Construye una grilla logica o matriz 30x50 para representar el mapa del juego
 def construir_grid(vacios, p1r):
     filas, columnas = 30, 50
     grid = [[0 for _ in range(columnas)] for _ in range(filas)]
@@ -199,6 +207,26 @@ def dibujar_vidas(screen, jugador):
         y = 20
         screen.blit(corazon_imagen, (x, y))
 
+#Para cargar los sprites del slash
+def cargar_sprites_slash(ruta, cantidad):
+    spritesheet = pygame.image.load(ruta).convert_alpha()
+    ancho_total, alto = spritesheet.get_size()
+    ancho_frame = ancho_total // cantidad
+    frames = []
+    for i in range(cantidad):
+        frame = spritesheet.subsurface(pygame.Rect(i * ancho_frame, 0, ancho_frame, alto))
+        frames.append(pygame.transform.scale(frame, (60, 60)))
+    return frames
+
+#Para la animacion del slash
+def crear_animacion_slash(x, y, lista_animaciones):
+    anim = {
+        "pos": (x - 30, y - 30),  # centrado
+        "frame": 0,
+        "tiempo": pygame.time.get_ticks()
+    }
+    lista_animaciones.append(anim)
+
 #Dibuja un icono y los puntos que a conseguido el jugador hasta el momento
 def dibujar_puntos(screen, puntos, fresa_sprite):
     font = pygame.font.SysFont(None, 36)
@@ -222,6 +250,7 @@ def Play():
     # como para registrar una lista de enemigo, los puntos que aparecen en el mapa y algunos limite o conficiones
     vacios = [pygame.Rect(210, 300, 180, 180), pygame.Rect(1110, 300, 180, 180), pygame.Rect(660, 480, 180, 180), pygame.Rect(210, 660, 180, 180), pygame.Rect(1110, 660, 180, 180)]
 
+    animaciones_slash = []
     enemigos = []
     tiempo_spawn = pygame.time.get_ticks()
     tiempo_entre_enemigos = 3000
@@ -325,14 +354,16 @@ def Play():
             #Si el enemigo toca al Player1 (O al reves) se elimina el enemigo
             if enemigo.tocar_jugador(p1.rect):
                 enemigos.remove(enemigo)
+                slash.play()
+                crear_animacion_slash(enemigo.rect.centerx, enemigo.rect.centery, animaciones_slash)
             
             #Si el enemigo toca al Player2 se elimina y llama una funcion para reducir la vida en 1 y
             #Dar invulnerabilidad temporalmente a Player2, pero si las vidas pasan a 0 termina el while
             if enemigo.tocar_jugador(p2.rect):
-                enemigos.remove(enemigo)
                 if p2.vidas > 0:
-                    p2.recibir_atk()
+                    p2.recibir_atk(inv, hit)
                 if p2.vidas == 0:
+                    inv.stop
                     run = False
 
         #Limita el tiempo para que aparesca una fresa y la cantidad maxima de estas (siendo 20 el maximo)
@@ -394,6 +425,16 @@ def Play():
 
         dibujar_vidas(screen, p2)
 
+        for anim in animaciones_slash[:]:
+            frame = anim["frame"]
+            if frame < len(slash_frames):
+                screen.blit(slash_frames[frame], anim["pos"])
+                if pygame.time.get_ticks() - anim["tiempo"] > 50:
+                    anim["frame"] += 1
+                    anim["tiempo"] = pygame.time.get_ticks()
+            else:
+                animaciones_slash.remove(anim)
+
         pygame.display.flip()
 
     del p2, p1
@@ -401,19 +442,20 @@ def Play():
 
 #Nuestra pantala de Game Over
 def game_over(puntos):
-    pygame.mixer.music.stop()
     pygame.init()
     font_titulo = pygame.font.SysFont(None, 72)
     font = pygame.font.SysFont(None, 46)
     input_font = pygame.font.SysFont(None, 40)
-    
+
     nombre = ""
+
     escribiendo = True
     clock = pygame.time.Clock()
 
     pygame.mixer.music.stop()
     pygame.mixer.music.load("assets/music/Game-Over.ogg")
-    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.set_volume(1)
+    pygame.mixer.music.play()
 
     while escribiendo:
         screen.fill((0, 0, 0))
@@ -434,7 +476,9 @@ def game_over(puntos):
         screen.blit(texto_input, (input_box.x + 10, input_box.y + 10))
 
         #Le decimos que presione Enter o A para guardar
-        screen.blit(font.render("Presiona A (o Enter) para guardar", True, (180, 180, 180)), (ancho // 2 - 180, 420))
+        texto = font.render("Presiona A (o Enter) para guardar", True, (180, 180, 180))
+        texto_rect = texto.get_rect(center=(ancho // 2, 420))
+        screen.blit(texto, texto_rect)
 
         pygame.display.flip()
         clock.tick(60)
@@ -446,8 +490,8 @@ def game_over(puntos):
             
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
-                    if nombre.strip():  #Asegura que no esté vacio
-                        guardar_records(nombre.strip(), puntos)
+                    if nombre.strip():  #Asegura que no este vacio
+                        agregar_record(nombre.strip(), puntos)
                     escribiendo = False  #Salimos al menu
                 elif event.key == pygame.K_BACKSPACE:
                     nombre = nombre[:-1]
@@ -456,14 +500,14 @@ def game_over(puntos):
             elif event.type == pygame.JOYBUTTONDOWN:
                 if event.button == 0:
                     if nombre.strip():
-                        guardar_records(nombre.strip(), puntos)
+                        agregar_record(nombre.strip(), puntos)
                     escribiendo = False
                 elif event.button == 1:
                     nombre = nombre[:-1]
                 elif len(nombre) < 15 and event.unicode.isprintable():
                     nombre += event.unicode
 
-    # Volver al menú
+    #Volver al menu
     Menu()
 
 Menu()
