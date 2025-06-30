@@ -110,11 +110,12 @@ class Enemigo:
         distancia_j2_y = self.rect.centery - jugador2.rect.centery
         distancia_j2_total = (distancia_j2**2 + distancia_j2_y**2)**0.5
 
-        rango_p1 = 50
+        rango_p1 = 90
         rango_p2 = 600
+
         if distancia_j1_total < rango_p1:
             self.estado_actual = "evadir"
-        if distancia_j2_total < rango_p2:
+        elif distancia_j2_total < rango_p2:
             self.estado_actual = "perseguir"
         else:
             self.estado_actual = "quieto"
