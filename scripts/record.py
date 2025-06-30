@@ -19,7 +19,7 @@ def guardar_records(records):
 def agregar_record(nombre, puntos):
     records = cargar_records()
     
-    # Agregar nuevo récord
+    # Agregar nuevo record
     records.append({"nombre": nombre, "puntos": puntos})
     
     #Ordenamos los records de mayor a menor
