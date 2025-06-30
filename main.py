@@ -20,9 +20,8 @@ pygame.display.set_caption("Protect The Farmer")
 pygame.display.set_icon(pygame.image.load("assets/images/icono.png"))
 clock = pygame.time.Clock()
 fondo = pygame.transform.scale(pygame.image.load('assets/images/background.png'), (ancho, altura))
-fondo_menu = pygame.transform.scale(pygame.image.load('assets/images/portada.png'), (ancho, altura))
-corazon_imagen = corazon_imagen = pygame.transform.scale(pygame.image.load("assets/images/corazones.png").convert_alpha(), (30, 30))
 fersa = pygame.image.load("assets/images/fresa.png").convert_alpha()
+corazon_imagen = corazon_imagen = pygame.transform.scale(pygame.image.load("assets/images/corazones.png").convert_alpha(), (30, 30))
 
 with open("scripts/sprite_data.json") as f:
     sprite_data = json.load(f)
@@ -46,15 +45,16 @@ for i in range(1, 8):
 
 #Menu principal
 def Menu():
+    fondo_menu = pygame.transform.scale(pygame.image.load('assets/images/portada.png'), (ancho, altura))
+    splash = Splash = pygame.transform.scale(pygame.image.load("assets/images/Protect-The-Farmer-Splash-Art.png").convert_alpha(), (400, 250))
     font = pygame.font.SysFont(None, 46)
-    font_titulo = pygame.font.SysFont(None, 72)
     menu = True
     clock = pygame.time.Clock()
     seleccion = None
 
     # Botones
-    iniciar_btn = pygame.Rect(ancho // 2 - 100, 300, 200, 60)
-    salir_btn = pygame.Rect(ancho // 2 - 100, 400, 200, 60)
+    iniciar_btn = pygame.Rect(ancho // 2 - 100, 450, 200, 60)
+    salir_btn = pygame.Rect(ancho // 2 - 100, 550, 200, 60)
 
     # Cargar sprites animados
     frame_index1 = 0
@@ -85,6 +85,8 @@ def Menu():
         screen.blit(fondo_menu, (0, 0))
 
         #Dibuja los botones
+        icono_a = pygame.transform.scale(pygame.image.load("assets/images/boton_A.png").convert_alpha(), (40, 40))
+        icono_b = pygame.transform.scale(pygame.image.load("assets/images/boton_B.png").convert_alpha(), (40, 40))
         pygame.draw.rect(screen, (100, 100, 255), iniciar_btn)
         pygame.draw.rect(screen, (255, 100, 100), salir_btn)
 
@@ -92,10 +94,12 @@ def Menu():
         text_salir = font.render("Salir", True, (255, 255, 255))
         screen.blit(text_iniciar, (iniciar_btn.x + 60, iniciar_btn.y + 15))
         screen.blit(text_salir, (salir_btn.x + 70, salir_btn.y + 15))
+        screen.blit(icono_a, (iniciar_btn.x, iniciar_btn.y + 10))
+        screen.blit(icono_b, (salir_btn.x, salir_btn.y + 10))
 
         #Dibujar el Titulo
-        titulo = font_titulo.render("Protect The Farmer", True, (255, 255, 0))
-        screen.blit(titulo, (ancho // 2 - titulo.get_width() // 2, 100))
+        splash_rect = splash.get_rect(center=(ancho // 2, 100 + splash.get_height() // 2))
+        screen.blit(splash, splash_rect)
 
         #Dibujamos los Records
         rect_fondo = pygame.Surface((400, 250), pygame.SRCALPHA)
